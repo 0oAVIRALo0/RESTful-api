@@ -5,9 +5,18 @@ const mongoose = require("mongoose")
 const Product = require("../models/product")
 
 router.get("/", (req, res, next) => {
-    Product.find().exec().then(docs => {
-        console.log(docs)
-        res.status(200).json(docs)
+    Product.find().select("name price _id").exec().then(docs => {
+        const response = {
+            count: docs.length, 
+            products: docs.map((product) => {
+                return {
+                    id: product._id,
+                    name: product.name,
+                    price: product.price
+                }
+            })
+        }
+        res.status(200).json(response)
     }).catch(err => {
         console.log(err)
         res.status(500).json({
@@ -26,7 +35,11 @@ router.post("/", (req, res, next) => {
         console.log(result)
         res.status(200).json({
             message: "New product added",
-            createdProduct: result
+            addedProduct: {
+                id: result._id,
+                name: result.name,
+                price: result.price
+            }
         })
     }).catch(err => {
         console.log(err)
@@ -60,7 +73,7 @@ router.patch("/:productId", (req, res, next) => {
     for (const ops of req.body) {
         updateOps[ops.propName] = ops.value
     }
-    Product.update({_id: id}, { $set: { name: updateOps }}).exec().then(result => {
+    Product.update({_id: id}, { $set: updateOps }).exec().then(result => {
         console.log(result)
         res.status(200).json(result)
     }).catch(err => {
